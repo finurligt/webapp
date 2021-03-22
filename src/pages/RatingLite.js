@@ -23,6 +23,7 @@ export class RatingLite extends Component {
     constructor(props) {
         super(props);
         this.state = {
+            league: undefined,
             winner: undefined,
             loser: undefined,
             games: []
@@ -37,7 +38,7 @@ export class RatingLite extends Component {
     submitGame(e) {
         e.preventDefault();
 
-        firebase.database().ref('ratingLite/').push({
+        firebase.database().ref('ratingLite/'+this.state.league).push({
             winner: this.state.winner,
             loser: this.state.loser,
             timestamp: firebase.database.ServerValue.TIMESTAMP,
@@ -58,8 +59,8 @@ export class RatingLite extends Component {
     }
 
     componentDidMount() {
-        var starCountRef = db.ref('ratingLite');
-        starCountRef.on('value', (snapshot) => {
+        var dbRef = db.ref('ratingLite');
+        dbRef.on('value', (snapshot) => {
             const data = snapshot.val();
             console.log(data)
             
@@ -98,7 +99,12 @@ export class RatingLite extends Component {
                     <div className="col-sm-3" style={{}}></div>
 
                     <div className="col-sm-6" style={{ textAlign: "left", backgroundColor: "white" }}>
-
+                        <select class="form-select" aria-label="Default select example" style={{marginTop:"20px"}}>
+                            <option selected>Open this select menu</option>
+                            <option value="1">One</option>
+                            <option value="2">Two</option>
+                            <option value="3">Three</option>
+                        </select>
                         <form className="gameForm" onSubmit={this.submitGame}>
                             <div className="form-group">
                                 <label htmlFor="inputWinner">Winner</label>
