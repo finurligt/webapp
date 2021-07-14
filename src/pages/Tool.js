@@ -1,5 +1,4 @@
 import React, { Component } from 'react'
-import 'bootstrap/dist/css/bootstrap.min.css';
 import './tool.css'
 import { Line } from 'react-chartjs-2'
 

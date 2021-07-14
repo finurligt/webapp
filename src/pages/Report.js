@@ -1,5 +1,4 @@
 import React, { Component } from 'react'
-import 'bootstrap/dist/css/bootstrap.min.css';
 import { Bar } from 'react-chartjs-2'
 
 export class Report extends Component {

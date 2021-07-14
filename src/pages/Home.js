@@ -1,5 +1,4 @@
 import React, { Component } from 'react'
-import 'bootstrap/dist/css/bootstrap.min.css';
 import './Home.css'
 
 export class Home extends Component {

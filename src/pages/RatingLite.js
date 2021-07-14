@@ -2,6 +2,7 @@ import React, { Component } from 'react'
 import './RatingLite.css'
 import firebase from "firebase/app";
 import 'firebase/database';
+import { Link, Route, Switch, useParams } from 'react-router-dom'
 
 
 firebase.initializeApp({
@@ -19,23 +20,94 @@ const db = firebase.database();
 
 //const database = firebase.database().ref().child("ratingLite")
 
+
 export class RatingLite extends Component {
+
     constructor(props) {
         super(props);
         this.state = {
             showAddLeagueElement: false,
-            league: undefined,
+            leagues: []
+        }
+
+        this.updateLeague = this.updateLeague.bind(this);
+    }
+
+    updateLeague(e) {
+        this.setState({
+            league: e.target.value
+        })
+    }
+
+    componentDidMount() {
+        var dbRef = db.ref('ratingLite/leagues');
+        dbRef.on('value', (snapshot) => {
+            const data = snapshot.val();
+            console.log("setting league data: ")
+            console.log(data)
+
+
+            this.setState({
+                leagues: data
+            })
+        });
+    }
+
+    render() {
+        return (
+            <>
+                <div className="row" style={{
+                    margin: 0
+                }}>
+                    <div className="col-sm-3" style={{}}></div>
+
+                    <div className="col-sm-6" style={{ textAlign: "left", backgroundColor: "white" }}>
+                        {/* Select League */}
+                        <div className="btn-group">
+                            <button type="button" className="btn btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                Select League
+                            </button>
+                            <div className="dropdown-menu">
+                                {Object.values(this.state.leagues).map(league => (
+                                    <Link key={league.id} className="dropdown-item" to={"/ratingLite/" + league.id} >{league.name}</Link>
+                                    //TODO: This does not work util I fix dynamic routing
+                                ))}
+                                <div className="dropdown-divider"></div>
+                                <a className="dropdown-item" href="#">Add new league</a>
+                            </div>
+                        </div>
+                        <div className="input-group mt-3">
+                            <input type="text" class="form-control" placeholder="League Name" aria-label="League Name" aria-describedby="basic-addon2" />
+                            <div className="input-group-append">
+                                <button className="btn btn-outline-secondary" type="button">Add</button>
+                            </div>
+                        </div>
+                        <Switch>
+                            <Route path={this.props.match.path + "/:leagueId"} component={League}></Route>
+                        </Switch>
+                    </div>
+                    <div className="col-sm-3"></div>
+                </div>
+            </>
+        )
+    }
+}
+
+class League extends Component {
+
+    constructor(props) {
+        super(props);
+        //find out where to find LeagueId
+        this.state = {
+            league: this.props.match.params.leagueId,
             winner: undefined,
             loser: undefined,
             games: undefined,
-            leagues: []
         }
 
         this.submitGame = this.submitGame.bind(this);
         this.updateWinner = this.updateWinner.bind(this);
         this.updateLoser = this.updateLoser.bind(this);
-        this.updateLeague = this.updateLeague.bind(this);
-
     }
 
     submitGame(e) {
@@ -61,29 +133,24 @@ export class RatingLite extends Component {
         })
     }
 
-    updateLeague(e) {
-        this.setState({
-            league: e.target.value
-        })
-    }
-
     componentDidMount() {
-        var dbRef = db.ref('ratingLite');
+        var dbRef = db.ref('ratingLite/games/' + this.state.league);
         dbRef.on('value', (snapshot) => {
             const data = snapshot.val();
+            console.log("game data:")
             console.log(data)
 
 
             this.setState({
-                games: data.games,
-                leagues: data.leagues
+                games: data,
             })
         });
     }
 
     render() {
+        console.log("state:")
         console.log(this.state)
-        let games = this.state.league && this.state.games && this.state.games[this.state.league] ? Object.values(this.state.games[this.state.league]) : [];
+        let games = this.state.games ? Object.values(this.state.games) : [];
 
         let map = {}
         games.forEach((game) => {
@@ -106,83 +173,56 @@ export class RatingLite extends Component {
 
         return (
             <>
-                <div className="row" style={{
-                    margin: 0
-                }}>
-                    <div className="col-sm-3" style={{}}></div>
-
-                    <div className="col-sm-6" style={{ textAlign: "left", backgroundColor: "white" }}>
-                        {/* Select League */}
-                        <select onChange={this.updateLeague} value={this.state.league} className="form-select" aria-label="Default select example" style={{ marginTop: "20px" }}>
-                            <option defaultValue={undefined}>Select a league...</option>
-                            {Object.values(this.state.leagues).map(league => (
-                                <option key={league.name} value={league.name}>{league.name}</option>
-                            ))}
-                        </select>
-                        {this.state.showAddLeagueElement ? null : <button type="submit" className="ml-1 btn btn-primary btn-sm">Add new league</button>}
-
-                        <div className="input-group mt-3">
-                            <input type="text" class="form-control" placeholder="Recipient's username" aria-label="Recipient's username" aria-describedby="basic-addon2" />
-                            <div className="input-group-append">
-                                <button className="btn btn-outline-secondary" type="button">Add</button>
-                            </div>
-                        </div>
-                        <form className="gameForm" onSubmit={this.submitGame}>
-                            <div className="form-group">
-                                <label htmlFor="inputWinner">Winner</label>
-                                <input required type="text" className="form-control" id="inputWinner" placeholder="Winner"
-                                    value={this.state.winner} onChange={this.updateWinner} />
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="inputLoser">Loser</label>
-                                <input required type="text" className="form-control" id="inputLoser" placeholder="Loser"
-                                    value={this.state.loser} onChange={this.updateLoser} />
-                            </div>
-
-                            <button type="submit" className="btn btn-primary">Submit</button>
-                        </form>
-
-                        <div className="gameList" style={{ textAlign: "center" }}>
-                            <h2 >Players</h2>
-                            {players.map(player => (
-                                <div key={player[0]}>
-                                    <div>
-                                        <div className="row">
-
-                                            <div className="col-6" style={{ textAlign: "left" }} >{player[0]}</div>
-                                            <div className="col-6" style={{ textAlign: "right" }} >{player[1]}</div>
-
-
-                                        </div>
-                                        <hr />
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-
-                        <div className="gameList" style={{ textAlign: "center" }}>
-                            <h2 >Game History</h2>
-                            {games.map(game => (
-                                <div key={game.timestamp}>
-                                    <div>
-                                        <div className="row">
-
-                                            <div className="col-6" style={{ textAlign: "left" }} >{game.winner}</div>
-                                            <div className="col-6" style={{ textAlign: "right" }} >{game.loser}</div>
-
-
-                                        </div>
-                                        <hr />
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-
-
-
+                <h2 style={{ textAlign: "center" }}>League: {this.state.league}</h2>
+                <form className="gameForm" onSubmit={this.submitGame}>
+                    <div className="form-group">
+                        <label htmlFor="inputWinner">Winner</label>
+                        <input required type="text" className="form-control" id="inputWinner" placeholder="Winner"
+                            value={this.state.winner} onChange={this.updateWinner} />
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="inputLoser">Loser</label>
+                        <input required type="text" className="form-control" id="inputLoser" placeholder="Loser"
+                            value={this.state.loser} onChange={this.updateLoser} />
                     </div>
 
-                    <div className="col-sm-3"></div>
+                    <button type="submit" className="btn btn-primary">Submit</button>
+                </form>
+
+                <div className="gameList" style={{ textAlign: "center" }}>
+                    <h2 >Players</h2>
+                    {players.map(player => (
+                        <div key={player[0]}>
+                            <div>
+                                <div className="row">
+
+                                    <div className="col-6" style={{ textAlign: "left" }} >{player[0]}</div>
+                                    <div className="col-6" style={{ textAlign: "right" }} >{player[1]}</div>
+
+
+                                </div>
+                                <hr />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                <div className="gameList" style={{ textAlign: "center" }}>
+                    <h2 >Game History</h2>
+                    {games.map(game => (
+                        <div key={game.timestamp}>
+                            <div>
+                                <div className="row">
+
+                                    <div className="col-6" style={{ textAlign: "left" }} >{game.winner}</div>
+                                    <div className="col-6" style={{ textAlign: "right" }} >{game.loser}</div>
+
+
+                                </div>
+                                <hr />
+                            </div>
+                        </div>
+                    ))}
                 </div>
             </>
         )
